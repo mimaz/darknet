@@ -2,10 +2,11 @@
 
 char *voc_names[] = {"aeroplane", "bicycle", "bird", "boat", "bottle", "bus", "car", "cat", "chair", "cow", "diningtable", "dog", "horse", "motorbike", "person", "pottedplant", "sheep", "sofa", "train", "tvmonitor"};
 
-void train_yolo(char *cfgfile, char *weightfile)
+void train_yolo(char *datacfg, char *cfgfile, char *weightfile)
 {
-    char *train_images = "/data/voc/train.txt";
-    char *backup_directory = "/home/pjreddie/backup/";
+    list *options = read_data_cfg(datacfg);
+    char *train_images = option_find_str(options, "train", "data/train.list");
+    char *backup_directory = option_find_str(options, "backup", "/backup/");
     srand(time(0));
     char *base = basecfg(cfgfile);
     printf("%s\n", base);
@@ -20,6 +21,8 @@ void train_yolo(char *cfgfile, char *weightfile)
     layer l = net->layers[net->n - 1];
 
     int side = l.side;
+    side = l.max_boxes;
+    printf("side: %d\n", side);
     int classes = l.classes;
     float jitter = l.jitter;
 
@@ -37,7 +40,8 @@ void train_yolo(char *cfgfile, char *weightfile)
     args.jitter = jitter;
     args.num_boxes = side;
     args.d = &buffer;
-    args.type = REGION_DATA;
+    //args.type = REGION_DATA;
+    args.type = DETECTION_DATA;
 
     args.angle = net->angle;
     args.exposure = net->exposure;
@@ -58,13 +62,16 @@ void train_yolo(char *cfgfile, char *weightfile)
 
         time=clock();
         float loss = train_network(net, train);
+        printf("trained with loss %f\n", loss);
         if (avg_loss < 0) avg_loss = loss;
         avg_loss = avg_loss*.9 + loss*.1;
 
         printf("%d: %f, %f avg, %f rate, %lf seconds, %d images\n", i, loss, avg_loss, get_current_rate(net), sec(clock()-time), i*imgs);
-        if(i%1000==0 || (i < 1000 && i%100 == 0)){
+        if(i%50==0){
             char buff[256];
             sprintf(buff, "%s/%s_%d.weights", backup_directory, base, i);
+            save_weights(net, buff);
+            sprintf(buff, "%s/%s_last.weights", backup_directory, base);
             save_weights(net, buff);
         }
         free_data(train);
@@ -311,16 +318,17 @@ void run_yolo(int argc, char **argv)
     int cam_index = find_int_arg(argc, argv, "-c", 0);
     int frame_skip = find_int_arg(argc, argv, "-s", 0);
     if(argc < 4){
-        fprintf(stderr, "usage: %s %s [train/test/valid] [cfg] [weights (optional)]\n", argv[0], argv[1]);
+        fprintf(stderr, "usage: %s %s [train/test/valid] [datacfg] [cfg] [weights (optional)]\n", argv[0], argv[1]);
         return;
     }
 
     int avg = find_int_arg(argc, argv, "-avg", 1);
-    char *cfg = argv[3];
-    char *weights = (argc > 4) ? argv[4] : 0;
-    char *filename = (argc > 5) ? argv[5]: 0;
+    char *datacfg = argv[3];
+    char *cfg = argv[4];
+    char *weights = (argc > 5) ? argv[5] : 0;
+    char *filename = (argc > 6) ? argv[6]: 0;
     if(0==strcmp(argv[2], "test")) test_yolo(cfg, weights, filename, thresh);
-    else if(0==strcmp(argv[2], "train")) train_yolo(cfg, weights);
+    else if(0==strcmp(argv[2], "train")) train_yolo(datacfg, cfg, weights);
     else if(0==strcmp(argv[2], "valid")) validate_yolo(cfg, weights);
     else if(0==strcmp(argv[2], "recall")) validate_yolo_recall(cfg, weights);
     else if(0==strcmp(argv[2], "demo")) demo(cfg, weights, thresh, cam_index, filename, voc_names, 20, frame_skip, prefix, avg, .5, 0,0,0,0);

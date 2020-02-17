@@ -458,6 +458,7 @@ void forward_convolutional_layer(convolutional_layer l, network net)
     int m = l.n/l.groups;
     int k = l.size*l.size*l.c/l.groups;
     int n = l.out_w*l.out_h;
+#pragma omp parallel for
     for(i = 0; i < l.batch; ++i){
         for(j = 0; j < l.groups; ++j){
             float *a = l.weights + j*l.nweights/l.groups;
@@ -499,6 +500,7 @@ void backward_convolutional_layer(convolutional_layer l, network net)
         backward_bias(l.bias_updates, l.delta, l.batch, l.n, k);
     }
 
+#pragma omp parallel for
     for(i = 0; i < l.batch; ++i){
         for(j = 0; j < l.groups; ++j){
             float *a = l.delta + (i*l.groups + j)*m*k;

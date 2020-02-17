@@ -28,3 +28,4 @@ Thumbs.db
 obj/
 libdarknet.so
 libdarknet.a
+dataset/

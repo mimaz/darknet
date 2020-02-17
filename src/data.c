@@ -477,6 +477,7 @@ void fill_truth_detection(char *path, int num_boxes, float *truth, int classes, 
             continue;
         }
 
+        printf("truth %f %f %f %f\n", x, y, w, h);
         truth[(i-sub)*5+0] = x;
         truth[(i-sub)*5+1] = y;
         truth[(i-sub)*5+2] = w;

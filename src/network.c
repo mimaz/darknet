@@ -290,8 +290,11 @@ float train_network_datum(network *net)
 {
     *net->seen += net->batch;
     net->train = 1;
+    printf("forward net\n");
     forward_network(net);
+    printf("backward net\n");
     backward_network(net);
+    printf("updating net\n");
     float error = *net->cost;
     if(((*net->seen)/net->batch)%net->subdivisions == 0) update_network(net);
     return error;
@@ -313,15 +316,19 @@ float train_network_sgd(network *net, data d, int n)
 
 float train_network(network *net, data d)
 {
+    printf("train_network\n");
     assert(d.X.rows % net->batch == 0);
     int batch = net->batch;
+    printf("batch: %d %d\n", batch, d.X.rows);
     int n = d.X.rows / batch;
 
     int i;
     float sum = 0;
     for(i = 0; i < n; ++i){
+        printf("start datum %d/%d\n", i, n);
         get_next_batch(d, batch, i*batch, net->input, net->truth);
         float err = train_network_datum(net);
+        printf("datum ok\n");
         sum += err;
     }
     return (float)sum/(n*batch);

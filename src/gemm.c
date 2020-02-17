@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <math.h>
 
+//#define USE_OMP
+
 void gemm_bin(int M, int N, int K, float ALPHA, 
         char  *A, int lda, 
         float *B, int ldb,
@@ -77,13 +79,16 @@ void gemm_nn(int M, int N, int K, float ALPHA,
         float *C, int ldc)
 {
     int i,j,k;
-    #pragma omp parallel for
+#ifdef USE_OMP
+#pragma omp parallel for
+#endif
     for(i = 0; i < M; ++i){
         for(k = 0; k < K; ++k){
-            register float A_PART = ALPHA*A[i*lda+k];
+            float value = 0;
             for(j = 0; j < N; ++j){
-                C[i*ldc+j] += A_PART*B[k*ldb+j];
+                value += B[k*ldb+j];
             }
+            C[i * ldc + j] += value * ALPHA * A[i * lda + k];
         }
     }
 }
@@ -94,14 +99,16 @@ void gemm_nt(int M, int N, int K, float ALPHA,
         float *C, int ldc)
 {
     int i,j,k;
-    #pragma omp parallel for
+#ifdef USE_OMP
+#pragma omp parallel for
+#endif
     for(i = 0; i < M; ++i){
         for(j = 0; j < N; ++j){
-            register float sum = 0;
+            float sum = 0;
             for(k = 0; k < K; ++k){
-                sum += ALPHA*A[i*lda+k]*B[j*ldb + k];
+                sum += A[i*lda+k]*B[j*ldb + k];
             }
-            C[i*ldc+j] += sum;
+            C[i*ldc+j] += sum * ALPHA;
         }
     }
 }
@@ -112,13 +119,16 @@ void gemm_tn(int M, int N, int K, float ALPHA,
         float *C, int ldc)
 {
     int i,j,k;
-    #pragma omp parallel for
+#ifdef USE_OMP
+#pragma omp parallel for
+#endif
     for(i = 0; i < M; ++i){
         for(k = 0; k < K; ++k){
-            register float A_PART = ALPHA*A[k*lda+i];
+            float value = 0;
             for(j = 0; j < N; ++j){
-                C[i*ldc+j] += A_PART*B[k*ldb+j];
+                value += B[k*ldb+j];
             }
+            C[i * ldc + j] += value * ALPHA * A[k * lda + i];
         }
     }
 }
@@ -129,14 +139,16 @@ void gemm_tt(int M, int N, int K, float ALPHA,
         float *C, int ldc)
 {
     int i,j,k;
-    #pragma omp parallel for
+#ifdef USE_OMP
+#pragma omp parallel for
+#endif
     for(i = 0; i < M; ++i){
         for(j = 0; j < N; ++j){
             register float sum = 0;
             for(k = 0; k < K; ++k){
-                sum += ALPHA*A[i+k*lda]*B[k+j*ldb];
+                sum += A[i+k*lda]*B[k+j*ldb];
             }
-            C[i*ldc+j] += sum;
+            C[i*ldc+j] += sum * ALPHA;
         }
     }
 }
