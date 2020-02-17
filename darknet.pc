@@ -1,0 +1,4 @@
+Name: Darknet
+Description: Neural network implementation (AlexeyAB's fork)
+Version: 1.0
+Libs: -ldarknet

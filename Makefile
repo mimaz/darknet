@@ -17,7 +17,10 @@ VPATH=./src/:./examples
 SLIB=libdarknet.so
 ALIB=libdarknet.a
 EXEC=darknet
+PKGC=darknet.pc
+HEAD=include/darknet.h
 OBJDIR=./obj/
+PREFIX?=/usr/local
 
 CC=gcc
 CPP=g++
@@ -103,3 +106,9 @@ results:
 clean:
 	rm -rf $(OBJS) $(SLIB) $(ALIB) $(EXEC) $(EXECOBJ) $(OBJDIR)/*
 
+install: all
+	install -m 755 ${EXEC} ${PREFIX}/bin
+	install -m 644 ${ALIB} ${PREFIX}/lib
+	install -m 644 ${SLIB} ${PREFIX}/lib
+	install -m 644 ${PKGC} ${PREFIX}/lib/pkgconfig
+	install -m 644 ${HEAD} ${PREFIX}/include/darknet
